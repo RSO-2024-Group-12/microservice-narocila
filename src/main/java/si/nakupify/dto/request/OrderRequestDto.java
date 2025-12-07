@@ -5,7 +5,7 @@ import jakarta.validation.constraints.*;
 
 import java.util.List;
 
-public record CreateOrderRequest(
+public record OrderRequestDto(
         @NotNull Long userId,
         @NotBlank String recipientName,
         @NotBlank String street,
@@ -16,5 +16,5 @@ public record CreateOrderRequest(
         @NotBlank String paymentMethod,
         @NotNull Boolean paid,
         @Min(0) @NotNull Long shippingCostCents,
-        @Valid @NotNull @Size(min = 1) List<CreateOrderItemRequest> items
+        @Valid @NotNull @Size(min = 1) List<OrderItemRequestDto> items
 ) {}

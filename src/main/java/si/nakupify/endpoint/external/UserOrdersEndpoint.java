@@ -1,30 +1,30 @@
 package si.nakupify.endpoint.external;
 
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.Response;
-import si.nakupify.dto.OrderDTO;
+import si.nakupify.dto.OrderDto;
 import si.nakupify.service.OrderService;
 
 import java.util.List;
 
 @Path("/api/orders")
+@Transactional
 public class UserOrdersEndpoint {
-
     @Inject
     OrderService service;
 
-
     @GET
-    public List<OrderDTO> list(@QueryParam("page") @DefaultValue("0") int page,
+    public List<OrderDto> list(@QueryParam("page") @DefaultValue("0") int page,
                                @QueryParam("size") @DefaultValue("50") int size,
-                               @QueryParam("userId") Long userId) {
-        return service.listDtos(page, size, userId);
+                               @QueryParam("userId") @NotNull Long userId) {
+        return service.list(page, size, userId);
     }
 
     @GET
     @Path("/{id}")
-    public Response get(@PathParam("id") Long id) {
-        return service.getByIdResponse(id);
+    public OrderDto get(@PathParam("id") Long id) {
+        return service.getByIdDto(id);
     }
 }

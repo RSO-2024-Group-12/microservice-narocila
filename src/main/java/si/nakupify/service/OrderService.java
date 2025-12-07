@@ -2,65 +2,41 @@ package si.nakupify.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
+import jakarta.ws.rs.NotFoundException;
 import si.nakupify.entity.OrderEntity;
 import si.nakupify.entity.OrderItemEntity;
 import si.nakupify.entity.OrderStatus;
 import si.nakupify.repository.OrderItemRepository;
 import si.nakupify.repository.OrderRepository;
-import si.nakupify.dto.OrderDTO;
+import si.nakupify.dto.OrderDto;
 import si.nakupify.mapper.OrderMapper;
-import si.nakupify.dto.request.CreateOrderRequest;
-import si.nakupify.dto.request.CreateOrderItemRequest;
-import jakarta.ws.rs.core.Response;
+import si.nakupify.dto.request.OrderRequestDto;
+import si.nakupify.dto.request.OrderItemRequestDto;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 @ApplicationScoped
 public class OrderService {
-
     @Inject
     OrderRepository orderRepository;
     @Inject
     OrderItemRepository itemRepository;
     @Inject
     ShippingGatewayService shippingGateway;
-
     @Inject
     OrdersMessagingService messaging;
-
     @Inject
     OrderMapper mapper;
 
-    public Optional<OrderEntity> findById(Long id) {
-        return Optional.ofNullable(orderRepository.findById(id));
-    }
-
-    public List<OrderEntity> listAll(int page, int size, Long userId) {
-        if (userId != null) {
-            return orderRepository.find("userId", userId).page(page, size).list();
-        }
-        return orderRepository.findAll().page(page, size).list();
-    }
-
-    /** DTO-returning variant for endpoints */
-    public List<OrderDTO> listDtos(int page, int size, Long userId) {
+    public List<OrderDto> list(int page, int size, Long userId) {
         if (size < 1) size = 50;
-        return listAll(page, size, userId).stream()
+        return orderRepository.find("userId", userId).page(page, size).list().stream()
                 .map(o -> mapper.toDto(o, itemsFor(o)))
                 .toList();
     }
 
-    public List<OrderItemEntity> itemsFor(OrderEntity o) {
-        return itemRepository.find("order", o).list();
-    }
-
-    // no internal create item record; use request DTO
-
-    @Transactional
-    public OrderEntity create(CreateOrderRequest req) {
+    public OrderEntity create(OrderRequestDto req) {
         OrderEntity o = new OrderEntity();
         o.userId = req.userId();
         o.recipientName = req.recipientName();
@@ -79,7 +55,7 @@ public class OrderService {
 
         long itemsTotal = 0;
         if (req.items() != null) {
-            for (CreateOrderItemRequest ci : req.items()) {
+            for (OrderItemRequestDto ci : req.items()) {
                 OrderItemEntity item = new OrderItemEntity();
                 item.order = o;
                 item.productId = ci.productId();
@@ -116,37 +92,30 @@ public class OrderService {
         return o;
     }
 
-    @Transactional
-    public Optional<OrderEntity> updateStatus(Long id, OrderStatus newStatus) {
-        OrderEntity o = orderRepository.findById(id);
-        if (o == null) return Optional.empty();
+    public OrderEntity updateStatus(Long id, OrderStatus newStatus) throws NotFoundException {
+        OrderEntity o = orderRepository.findByIdOrThrow(id);
         o.status = newStatus;
         o.updatedAt = Instant.now();
         if (messaging != null) messaging.emitOrderUpdated(o);
-        return Optional.of(o);
+        return o;
     }
 
-    // Convenience methods that return ready DTOs/Responses for endpoints
-    public Response getByIdResponse(Long id) {
-        var opt = findById(id);
-        return opt.<Response>map(o -> Response.ok(mapper.toDto(o, itemsFor(o))).build())
-                .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
+    public OrderDto getByIdDto(Long id) throws NotFoundException {
+        var o = orderRepository.findByIdOrThrow(id);
+        return mapper.toDto(o, itemsFor(o));
     }
 
-    public OrderDTO createReturningDto(CreateOrderRequest req) {
+    public OrderDto createReturningDto(OrderRequestDto req) {
         var created = create(req);
         return mapper.toDto(created, itemsFor(created));
     }
 
-    public Response updateStatusResponse(Long id, OrderStatus newStatus) {
+    public OrderDto updateStatusDto(Long id, OrderStatus newStatus) throws NotFoundException {
         var updated = updateStatus(id, newStatus);
-        return updated.<Response>map(o -> Response.ok(mapper.toDto(o, itemsFor(o))).build())
-                .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
+        return mapper.toDto(updated, itemsFor(updated));
     }
 
-    public Response createResponse(CreateOrderRequest req) {
-        var created = create(req);
-        var dto = mapper.toDto(created, itemsFor(created));
-        return Response.created(java.net.URI.create("/internal/orders/" + created.id)).entity(dto).build();
+    private List<OrderItemEntity> itemsFor(OrderEntity o) {
+        return itemRepository.find("order", o).list();
     }
 }
