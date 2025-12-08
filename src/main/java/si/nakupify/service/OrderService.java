@@ -36,8 +36,21 @@ public class OrderService {
                 .toList();
     }
 
-    public OrderEntity create(OrderRequestDto req) {
-        OrderEntity o = new OrderEntity();
+    public OrderEntity updateStatus(Long id, OrderStatus newStatus) throws NotFoundException {
+        final var o = orderRepository.findByIdOrThrow(id);
+        o.status = newStatus;
+        o.updatedAt = Instant.now();
+        if (messaging != null) messaging.emitOrderUpdated(o);
+        return o;
+    }
+
+    public OrderDto getByIdDto(Long id) throws NotFoundException {
+        var o = orderRepository.findByIdOrThrow(id);
+        return mapper.toDto(o, itemsFor(o));
+    }
+
+    public OrderDto create(OrderRequestDto req) {
+        final var o = new OrderEntity();
         o.userId = req.userId();
         o.recipientName = req.recipientName();
         o.street = req.street();
@@ -89,25 +102,8 @@ public class OrderService {
         o.updatedAt = Instant.now();
         // Emit order created event
         if (messaging != null) messaging.emitOrderCreated(o);
-        return o;
-    }
 
-    public OrderEntity updateStatus(Long id, OrderStatus newStatus) throws NotFoundException {
-        OrderEntity o = orderRepository.findByIdOrThrow(id);
-        o.status = newStatus;
-        o.updatedAt = Instant.now();
-        if (messaging != null) messaging.emitOrderUpdated(o);
-        return o;
-    }
-
-    public OrderDto getByIdDto(Long id) throws NotFoundException {
-        var o = orderRepository.findByIdOrThrow(id);
         return mapper.toDto(o, itemsFor(o));
-    }
-
-    public OrderDto createReturningDto(OrderRequestDto req) {
-        var created = create(req);
-        return mapper.toDto(created, itemsFor(created));
     }
 
     public OrderDto updateStatusDto(Long id, OrderStatus newStatus) throws NotFoundException {

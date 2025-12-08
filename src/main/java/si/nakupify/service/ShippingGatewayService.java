@@ -10,6 +10,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 /**
  * Minimal HTTP client to call microservice-posiljanje internal API.
@@ -58,6 +59,8 @@ public class ShippingGatewayService {
             }
             return null;
         } catch (Exception e) {
+            System.err.println("Failed to create shipment: ");
+            e.printStackTrace();
             return null; // fail softly for now
         }
     }

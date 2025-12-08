@@ -20,7 +20,7 @@ public class InternalOrdersEndpoint {
 
     @POST
     public OrderDto create(@Valid OrderRequestDto req) {
-        return service.createReturningDto(req);
+        return service.create(req);
     }
 
     @PATCH

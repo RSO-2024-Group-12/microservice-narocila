@@ -4,7 +4,7 @@ import org.mapstruct.Mapper;
 import si.nakupify.dto.OrderItemDto;
 import si.nakupify.entity.OrderItemEntity;
 
-@Mapper(componentModel = "cdi")
+@Mapper(componentModel = "jakarta")
 public interface OrderItemMapper {
     OrderItemDto toDto(OrderItemEntity entity);
 }

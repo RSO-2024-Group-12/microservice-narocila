@@ -30,7 +30,7 @@ class InternalOrdersEndpointTest {
 
     @Test
     void create_returnsDto() {
-        when(service.createReturningDto(any())).thenReturn(dto(10L));
+        when(service.create(any())).thenReturn(dto(10L));
 
         String body = "{" +
                 "\"userId\":1,\"recipientName\":\"John\",\"street\":\"St\",\"houseNumber\":\"1\",\"city\":\"City\",\"postalCode\":\"1000\",\"country\":\"SI\",\"paymentMethod\":\"CARD\",\"paid\":true,\"shippingCostCents\":10,\"items\":[{\"productId\":5,\"quantity\":1,\"unitPriceCents\":90}]}";
@@ -44,7 +44,7 @@ class InternalOrdersEndpointTest {
             .statusCode(200)
             .body("id", equalTo(10));
 
-        verify(service).createReturningDto(any());
+        verify(service).create(any());
     }
 
     @Test

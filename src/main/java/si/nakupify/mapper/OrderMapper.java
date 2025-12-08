@@ -8,7 +8,7 @@ import si.nakupify.entity.OrderItemEntity;
 
 import java.util.List;
 
-@Mapper(componentModel = "cdi", uses = {OrderItemMapper.class})
+@Mapper(componentModel = "jakarta", uses = {OrderItemMapper.class})
 public interface OrderMapper {
 
     @Mapping(target = "items", source = "items")
