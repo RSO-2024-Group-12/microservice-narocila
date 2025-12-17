@@ -35,9 +35,6 @@ class OrderServiceTest {
     OrdersMessagingService messaging;
 
     @InjectMock
-    ShippingGatewayService shippingGatewayService;
-
-    @InjectMock
     OrderMapper mapper;
 
     private static OrderEntity orderEntity(Long id) {
@@ -84,6 +81,5 @@ class OrderServiceTest {
         var result = service.updateStatusDto(2L, OrderStatus.SHIPPED);
         assertEquals(OrderStatus.SHIPPED, result.status());
         verify(orderRepository).findByIdOrThrow(2L);
-        verify(messaging).emitOrderUpdated(any());
     }
 }

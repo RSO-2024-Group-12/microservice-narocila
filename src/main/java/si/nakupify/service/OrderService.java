@@ -23,8 +23,6 @@ public class OrderService {
     @Inject
     OrderItemRepository itemRepository;
     @Inject
-    ShippingGatewayService shippingGateway;
-    @Inject
     OrdersMessagingService messaging;
     @Inject
     OrderMapper mapper;
@@ -40,7 +38,6 @@ public class OrderService {
         final var o = orderRepository.findByIdOrThrow(id);
         o.status = newStatus;
         o.updatedAt = Instant.now();
-        if (messaging != null) messaging.emitOrderUpdated(o);
         return o;
     }
 
@@ -81,28 +78,9 @@ public class OrderService {
         }
         o.totalPriceCents = itemsTotal + (o.shippingCostCents == null ? 0 : o.shippingCostCents);
 
-        // Create shipment via shipping microservice
-        ShippingGatewayService.CreateShipmentRequest sreq = new ShippingGatewayService.CreateShipmentRequest(
-                o.id,
-                "LOCAL",
-                o.shippingCostCents,
-                o.recipientName,
-                o.street,
-                o.houseNumber,
-                o.city,
-                o.postalCode,
-                o.country
-        );
-        var shipment = shippingGateway.createShipment(sreq);
-        if (shipment != null) {
-            o.shipmentId = shipment.id();
-            o.trackingNumber = shipment.trackingNumber();
-            o.status = OrderStatus.SHIPPED; // optional: mark as shipped when label created
-        }
-        o.updatedAt = Instant.now();
-        // Emit order created event
-        if (messaging != null) messaging.emitOrderCreated(o);
+        messaging.emitShipmentRequested(o);
 
+        o.updatedAt = Instant.now();
         return mapper.toDto(o, itemsFor(o));
     }
 
