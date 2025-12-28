@@ -1,86 +1,82 @@
-# code-with-quarkus
+# Mikrostoritev za Naročila (microservice-narocila)
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+Ta mikrostoritev je del platforme Nakupify in je odgovorna za upravljanje naročil kupcev. Omogoča ustvarjanje naročil, sledenje njihovemu stanju in pregled zgodovine naročil.
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+## Tehnološki sklad
 
-## Running the application in dev mode
+- **Ogrodje:** [Quarkus](https://quarkus.io/) (Supersonic Subatomic Java)
+- **Podatkovna baza:** PostgreSQL (Hibernate ORM s Panache)
+- **Sporočilni sistem:** Apache Kafka (Reactive Messaging)
+- **Pakiranje:** Docker, Helm
 
-You can run your application in dev mode that enables live coding using:
+## Ključne funkcionalnosti
+
+- Ustvarjanje novih naročil.
+- Upravljanje statusov naročil (npr. ODDANO, V_OBDELAVI, POSLANO, PREVZETO, PREKLICANO).
+- Pregled naročil posameznega uporabnika.
+- Integracija s sistemom za pošiljanje preko Kafka sporočil.
+
+## API končne točke
+
+### Javni API (`/api/orders`)
+
+| Metoda | Pot | Opis |
+| :--- | :--- | :--- |
+| `GET` | `/api/orders` | Pridobi seznam naročil za določenega uporabnika (`userId`). |
+| `GET` | `/api/orders/{id}` | Pridobi podrobnosti posameznega naročila po ID-ju. |
+
+### Interni API (`/internal/orders`)
+
+| Metoda | Pot | Opis |
+| :--- | :--- | :--- |
+| `POST` | `/internal/orders` | Ustvari novo naročilo. |
+| `PATCH` | `/internal/orders/{id}/status` | Posodobi status naročila. |
+
+## Razvoj in zagon
+
+### Lokalni zagon v razvojnem načinu
+
+Za zagon aplikacije s podporo za "vroče" ponovno nalaganje kode (live coding) uporabite:
 
 ```shell script
 ./mvnw quarkus:dev
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
+Aplikacija bo privzeto dostopna na `http://localhost:8080`. Razvojni vmesnik (Dev UI) je na voljo na `http://localhost:8080/q/dev/`.
 
-## Packaging and running the application
+### Pakiranje aplikacije
 
-The application can be packaged using:
+Za pakiranje aplikacije v JAR datoteko:
 
 ```shell script
 ./mvnw package
 ```
 
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
-
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
-
-If you want to build an _über-jar_, execute the following command:
+Za izdelavo *über-jar* (vsebuje vse odvisnosti):
 
 ```shell script
 ./mvnw package -Dquarkus.package.jar.type=uber-jar
 ```
 
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
+### Izgradnja Docker slike
 
-## Creating a native executable
-
-You can create a native executable using:
+Aplikacijo lahko zapakirate v Docker sliko z ukazom:
 
 ```shell script
-./mvnw package -Dnative
+docker build -t nakupify/microservice-narocila .
 ```
 
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
+## Konfiguracija
+
+Konfiguracijski parametri se nahajajo v `src/main/resources/application.properties`. Glavne nastavitve vključujejo:
+
+- `quarkus.datasource.jdbc.url`: Povezava do PostgreSQL baze.
+- `mp.messaging.outgoing.orders-out.connector`: Nastavitve za povezavo s Kafka.
+
+## Avtomatski testi
+
+Za zagon vseh testov uporabite:
 
 ```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
+./mvnw test
 ```
-
-You can then execute your native executable with: `./target/code-with-quarkus-1.0.0-SNAPSHOT-runner`
-
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
-
-## Related Guides
-
-- REST ([guide](https://quarkus.io/guides/rest)): A Jakarta REST implementation utilizing build time processing and Vert.x. This extension is not compatible with the quarkus-resteasy extension, or any of the extensions that depend on it.
-- REST Jackson ([guide](https://quarkus.io/guides/rest#json-serialisation)): Jackson serialization support for Quarkus REST. This extension is not compatible with the quarkus-resteasy extension, or any of the extensions that depend on it
-- Messaging - Kafka Connector ([guide](https://quarkus.io/guides/kafka-getting-started)): Connect to Kafka with Reactive Messaging
-- Hibernate ORM with Panache ([guide](https://quarkus.io/guides/hibernate-orm-panache)): Simplify your persistence code for Hibernate ORM via the active record or the repository pattern
-- JDBC Driver - PostgreSQL ([guide](https://quarkus.io/guides/datasource)): Connect to the PostgreSQL database via JDBC
-
-## Provided Code
-
-### Hibernate ORM
-
-Create your first JPA entity
-
-[Related guide section...](https://quarkus.io/guides/hibernate-orm)
-
-[Related Hibernate with Panache section...](https://quarkus.io/guides/hibernate-orm-panache)
-
-
-### Messaging codestart
-
-Use Quarkus Messaging
-
-[Related Apache Kafka guide section...](https://quarkus.io/guides/kafka-reactive-getting-started)
-
-
-### REST
-
-Easily start your REST Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
