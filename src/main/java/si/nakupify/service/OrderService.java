@@ -1,7 +1,11 @@
 package si.nakupify.service;
 
+import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
+import org.eclipse.microprofile.faulttolerance.Fallback;
+import org.eclipse.microprofile.faulttolerance.Retry;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
 import si.nakupify.entity.OrderEntity;
 import si.nakupify.entity.OrderItemEntity;
@@ -34,6 +38,9 @@ public class OrderService {
                 .toList();
     }
 
+    @Transactional
+    @Retry(maxRetries = 3, delay = 200)
+    @CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 0.5, delay = 1000, successThreshold = 2)
     public OrderEntity updateStatus(Long id, OrderStatus newStatus) throws NotFoundException {
         final var o = orderRepository.findByIdOrThrow(id);
         o.status = newStatus;
@@ -46,6 +53,9 @@ public class OrderService {
         return mapper.toDto(o, itemsFor(o));
     }
 
+    @Transactional
+    @Retry(maxRetries = 2)
+    @CircuitBreaker(requestVolumeThreshold = 10, failureRatio = 0.7, delay = 5000)
     public OrderDto create(OrderRequestDto req) {
         final var o = new OrderEntity();
         o.userId = req.userId();
