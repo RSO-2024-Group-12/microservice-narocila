@@ -1,5 +1,6 @@
 package si.nakupify.endpoint.external;
 
+import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotNull;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @Path("/api/orders")
 @Transactional
+@Authenticated
 public class UserOrdersEndpoint {
     @Inject
     OrderService service;
